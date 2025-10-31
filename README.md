@@ -1,185 +1,257 @@
+# Hylia API — Quarkus (Arquitetura Limpa)
 
-# Hylia — README
-
-> **Curso/Disciplina:** FIAP — 1TDSPO — DDD
-> **Solução:** *Hylia* (cadastro de Pacientes, Profissionais e Hospitais)
-> **Stack:** Java 17+, Maven, **Quarkus 3.x**, Oracle (JDBC), Agroal (pool), CDI (@Inject)
-
----
+**Curso:** FIAP — 1TDSPO  
+**Solução:** Hylia (Pacientes, Profissionais, Hospitais, Consultas etc.)  
+**Stack:** Java 17+, Maven, Quarkus 3.x, Oracle (JDBC), Agroal (pool), CDI (@Inject), JAX‑RS (REST)
 
 ## Sumário
-
-1. Objetivo & Escopo
-2. Arquitetura & Pastas
-3. Regras de Negócio
-4. DDL
-5. Configuração & Execução
-6. Como testar (runner)
-7. Por que usamos @Inject / Beans
+- Objetivo & Escopo
+- Arquitetura & Pastas
+- Regras de Negócio
+- Banco de Dados (DDL)
+- Configuração & Execução
+- Endpoints (Guia rápido)
+- Plano de Testes (Postman)
+- Por que CDI/@Inject?
+- Mapeamento com a Rubrica
 
 ---
 
 ## Objetivo & Escopo
+Hylia é um projeto didático que demonstra **Arquitetura Limpa (Clean Architecture)** no Quarkus com banco **Oracle**.
 
-**Hylia** é um projeto didático demonstrando **Clean Architecture** com **Quarkus** e **Oracle**.
-Nesta entrega:
+Inclui:
+- Entidades de domínio: **Paciente**, **Professional**, **Hospital** (e fluxo de **Consulta** com confirmação/cancelamento, além de **Notificação**, **Acesso** e **CuidadorVinculo** quando aplicável).
+- Validações de domínio (CPF/CRM/Email/UF/Idade) e normalização de dados.
+- Persistência **JDBC** pura (Oracle) com pool **Agroal**.
+- **API REST** (JAX‑RS) com DTOs de entrada/saída, mapeadores e resources.
+- **CORS** configurado para desenvolvimento local e frontends na nuvem.
 
-* Domínio com entidades: **Paciente**, **Professional**, **Hospital**.
-* **Validações de domínio** (CPF/CRM/Email/UF/Idade) e normalização de dados.
-* Persistência **JDBC** (Oracle) via **Agroal DataSource** (pool).
-* Execução em **modo runner/CLI** (sem API REST por enquanto).
-
-**Fora do escopo**: autenticação/autorização, interface web, agendamentos, integrações externas.
+Fora do escopo (nesta entrega): autenticação real (JWT/OIDC), segurança robusta, rate limiting, jobs assíncronos.
 
 ---
 
 ## Arquitetura & Pastas
-
-**Clean Architecture**: regras de negócio no **domínio**, persistência isolada na **infraestrutura**, acoplamento via **interfaces de repositório** (Dependency Inversion).
+**Clean Architecture**: regras de negócio em `domain`, orquestração em `application/usecase`, entrada/saída em `infrastructure` (web + persistence). Acoplamento via **interfaces** e CDI.
 
 ```
 src/main/java/br/com/fiap/hylia
+├─ application
+│  └─ usecase
+│     ├─ paciente/…                 # ex.: CadastrarPaciente
+│     ├─ professional/…             # ex.: CadastrarProfessional, CriarConsultaProfessional
+│     └─ consulta/…                 # ConfirmarConsultaPaciente, CancelarConsulta
 ├─ domain
-│  ├─ model        
-│  ├─ repository   
-│  ├─ util         
-│  └─ exceptions   
+│  ├─ model/                        # Paciente, Professional, Hospital, Consulta, …
+│  ├─ repository/                   # interfaces (ports)
+│  ├─ util/                         # Validators
+│  └─ exceptions/                   # ValidacaoDominioException, EntidadeNaoLocalizada
 ├─ infrastructure
-│  ├─ persistence  
-│  └─ main         
-└─ resources
+│  ├─ persistence/                  # JDBC repositories, DatabaseConnection
+│  └─ web/
+│     ├─ dto/…                      # DTOs (records) de entrada/saída
+│     ├─ mapper/…                   # mapeia DTO <-> domínio
+│     └─ resource/…                 # JAX‑RS resources (controllers)
+└─ resources/
    └─ application.properties
 ```
 
-**Fluxo (ex.: salvar Paciente):**
-Runner cria entidade → chama `PacienteRepository` (interface do **domínio**) → CDI injeta `JdbcPacienteRepository` (**infra**) → executa SQL usando `DatabaseConnectionImpl` (que injeta `DataSource` Agroal) → retorna a entidade com `id`.
+**Fluxo (ex.: criar Paciente):**  
+Resource → Mapper → Use Case → `PacienteRepository` (interface do domínio) → implementação JDBC (infra) → Oracle → retorna entidade de domínio → mapeada para DTO de saída.
 
 ---
 
-## Regras de Negócio
+## Regras de Negócio (resumo)
+**Paciente**
+- CPF válido; nome normalizado; idade 0..120.
+- Atualizações consistentes (evitar idades incoerentes).
 
-### Paciente
+**Professional**
+- CRM válido (ex.: `CRM-1234`), identidade por CRM (`equals/hashCode`).
+- CPF válido; email válido; idade ≥ 23; especialidade normalizada.
 
-* **CPF válido**, **nome normalizado**, **idade 0..120**.
-* Atualização consistente de nome/idade (ex.: evitar “voltar” idade de forma incoerente).
+**Hospital**
+- UF com 2 letras (armazenada em maiúsculas); email válido; nome/cidade normalizados.
 
-### Professional
-
-* **CRM** (formato canônico, ex.: `CRM-1234`, armazenado **UPPER**), **CPF válido**, **email válido** (armazenado **lowercase**), **idade ≥ 23**.
-* Atualização de perfil (nome, idade, email, especialidade).
-* **Identidade por CRM** (`equals/hashCode` baseados em CRM).
-
-### Hospital
-
-* **UF** com 2 letras (ex.: `SP`), **email válido**.
-* Atualização de dados (nome, cidade, estado, email).
-
-### Exceções
-
-* **ValidacaoDominioException**: violação de regra de negócio (lançada nas entidades).
-* **EntidadeNaoLocalizada**: quando o repositório não encontra o registro.
-* **Erros SQL**: tratados na borda de infraestrutura (JDBC).
+**Exceções**
+- `ValidacaoDominioException`: violações de regra de negócio.
+- `EntidadeNaoLocalizada`: repositório não encontrou registro.
+- Erros SQL: tratados na borda de infraestrutura (JDBC).
 
 ---
 
-## DDL
-
-```sql
--- PACIENTE
-CREATE TABLE PACIENTE (
-  ID         NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  CPF        VARCHAR2(14)  NOT NULL,
-  NOME       VARCHAR2(120) NOT NULL,
-  IDADE      NUMBER(3)     NOT NULL,
-  CREATED_AT TIMESTAMP DEFAULT SYSTIMESTAMP,
-  UPDATED_AT TIMESTAMP
-);
-ALTER TABLE PACIENTE ADD CONSTRAINT UQ_PACIENTE_CPF UNIQUE (CPF);
-
--- PROFESSIONAL
-CREATE TABLE PROFESSIONAL (
-  ID            NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  CRM           VARCHAR2(32)  NOT NULL,
-  CPF           VARCHAR2(14)  NOT NULL,
-  NOME          VARCHAR2(120) NOT NULL,
-  IDADE         NUMBER(3)     NOT NULL,
-  EMAIL         VARCHAR2(160) NOT NULL,
-  ESPECIALIDADE VARCHAR2(160) NOT NULL,
-  CREATED_AT    TIMESTAMP DEFAULT SYSTIMESTAMP,
-  UPDATED_AT    TIMESTAMP
-);
-ALTER TABLE PROFESSIONAL ADD CONSTRAINT UQ_PROFESSIONAL_CRM   UNIQUE (CRM);
-ALTER TABLE PROFESSIONAL ADD CONSTRAINT UQ_PROFESSIONAL_EMAIL UNIQUE (EMAIL);
-
--- HOSPITAL
-CREATE TABLE HOSPITAL (
-  ID         NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  NOME       VARCHAR2(160) NOT NULL,
-  CIDADE     VARCHAR2(120) NOT NULL,
-  ESTADO     CHAR(2)       NOT NULL,
-  EMAIL      VARCHAR2(160) NOT NULL,
-  CREATED_AT TIMESTAMP DEFAULT SYSTIMESTAMP,
-  UPDATED_AT TIMESTAMP
-);
-ALTER TABLE HOSPITAL ADD CONSTRAINT UQ_HOSPITAL_EMAIL UNIQUE (EMAIL);
-```
-
-> **Evolução (opcional para trabalhos futuros):**
-> A) `PROFESSIONAL.HOSPITAL_ID` (FK → `HOSPITAL.ID`) para relação “trabalha em”.
-> B) Tabela **AGENDAMENTO** relacionando `PACIENTE`, `PROFESSIONAL`, `HOSPITAL`.
+## Banco de Dados (DDL)
+> O projeto usa a DDL oficial da disciplina (tabelas como `T_HC_USUARIO`, `T_HC_PROFISSIONAIS`, `T_HC_CONSULTA`, etc.).  
+> Colunas `IDENTITY` no Oracle geram IDs crescentes — o primeiro ID **não** volta a 1 após deleções.
 
 ---
 
 ## Configuração & Execução
 
 ### Requisitos
+- Java **17+**, Maven **3.9+**
+- Acesso ao banco **Oracle**
+- IDE sugerida: IntelliJ IDEA
 
-* **Java JDK 17+**, **Maven 3.9+**
-* Banco **Oracle** acessível
-* IDE sugerida: IntelliJ IDEA
+### Dependências principais (Maven)
+- `io.quarkus:quarkus-agroal` (datasource/pool)
+- `io.quarkus:quarkus-jdbc-oracle` (driver Oracle)
+- `io.quarkus:quarkus-arc` (CDI)
+- `io.quarkus:quarkus-rest` + `quarkus-rest-jackson` (JAX‑RS + JSON)
 
-### Dependências (pom principais)
-
-* `io.quarkus:quarkus-agroal` (pool/datasource)
-* `io.quarkus:quarkus-jdbc-oracle` (driver)
-* `io.quarkus:quarkus-arc` (CDI)
-* `io.quarkus:quarkus-junit5` (testes)
-
-### Configurar datasource — `src/main/resources/application.properties`
+### `application.properties`
+Perfil **padrão (produção‑like)** usa variáveis de ambiente; perfil **dev** traz credenciais FIAP **para execução local/avaliação**.
 
 ```properties
+# ===== default (prod-like) =====
 quarkus.datasource.db-kind=oracle
-quarkus.datasource.jdbc.url=jdbc:oracle:thin:@<host>:<port>:<SID>
-quarkus.datasource.username=RM561408
-quarkus.datasource.password=171192
+quarkus.datasource.jdbc.url=${DB_URL}
+quarkus.datasource.username=${DB_USER}
+quarkus.datasource.password=${DB_PASS}
+
+# CORS
+quarkus.http.cors=true
+quarkus.http.cors.origins=http://localhost:5173
+quarkus.http.cors.origin-patterns=https://.*\.vercel\.app,https://.*\.onrender\.com
+quarkus.http.cors.methods=GET,POST,PATCH,PUT,DELETE,OPTIONS
+quarkus.http.cors.headers=Origin,Accept,Content-Type,Authorization
+quarkus.http.cors.exposed-headers=Location
+
+# ===== dev (execução local do professor) =====
+%dev.quarkus.datasource.devservices.enabled=false
+%dev.quarkus.datasource.jdbc.url=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL   # ou //host:1521/ORCL (service)
+%dev.quarkus.datasource.username=RM561408
+%dev.quarkus.datasource.password=171192
+```
+
+**Como executar (dev):**
+```bash
+mvn quarkus:dev
+```
+Quarkus usa o perfil `%dev` automaticamente.
+
+**Empacotar e rodar (opcional):**
+```bash
+./mvnw -DskipTests package
+java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar
 ```
 
 ---
 
-## Como testar (runner)
+## Endpoints (Guia rápido)
 
-**Classe:** `br.com.fiap.hylia.infrastructure.main.HyliaApplication`
-* Rodar a classe Main via IDE.
-* Demonstra **create → update → find** para **Paciente**, **Professional** e **Hospital**.
-* Para facilitar reexecuções, existe um **pre-clean** que remove registros pelos identificadores padrão (**CPF/CRM/EMAIL**) antes de criar novamente.
-* Para **apagar** via runner, **descomente** os blocos `delete...()` e rode novamente.
-* Para **testar outros dados**, altere as **variáveis** no topo da classe HyliaApplication (ex.: `P_CPF`, `PRO_CRM`, `H_EMAIL` test data).
+### Pacientes
+- `POST /api/pacientes` — criar
+- `GET  /api/pacientes` — listar
+- `GET  /api/pacientes/{cpf}` — buscar por CPF
+- *(opcionais)* `PATCH /api/pacientes/{cpf}`, `DELETE /api/pacientes/{cpf}`
 
-**Verificar no banco (exemplos):**
+### Professionals
+- `POST /api/professionals` — criar
+- `GET  /api/professionals` — listar
+- `GET  /api/professionals/{crm}` — buscar por CRM
+- *(opcionais)* `PATCH /api/professionals/{crm}`, `DELETE /api/professionals/{crm}`
 
-```sql
-SELECT * FROM PACIENTE     WHERE CPF   = '123.456.789-09';
-SELECT * FROM PROFESSIONAL WHERE CRM   = 'CRM-1234';
-SELECT * FROM HOSPITAL     WHERE EMAIL = 'hospital@demo.com';
-```
+### Hospitais
+- `POST /api/hospitais` — criar
+- `GET  /api/hospitais` — listar
+- `GET  /api/hospitais/{email}` — buscar por email
+- *(opcionais)* `PATCH /api/hospitais/{email}`, `DELETE /api/hospitais/{email}`
+
+### Consultas (fluxos de Profissional e Paciente)
+- **Agenda do Profissional**
+  - `POST /api/professionals/{crm}/consultas` — cria consulta (`idPaciente`, `dtHoraIso`, `local`)
+  - `GET  /api/professionals/{crm}/consultas` — lista consultas do profissional
+- **Ações do Paciente**
+  - `GET  /api/pacientes/{idPaciente}/consultas` — lista consultas do paciente
+  - `POST /api/pacientes/{idPaciente}/consultas/{idConsulta}/confirmar` — confirma (`{ "canal": "WEB" }` opcional)
+  - `POST /api/pacientes/{idPaciente}/consultas/{idConsulta}/cancelar` — cancela (`{ "motivo": "...", "canceladoPor": "PACIENTE" }` opcional)
 
 ---
 
-## Por que usamos @Inject / Beans
+## Plano de Testes (Postman)
+> Use CPFs **válidos** (algoritmo), por exemplo: `11144477735`, `93541134780`.  
+> Ajuste CRM/EMAIL para valores únicos quando necessário.
 
-* **CDI (Quarkus/Arc)** fornece **injeção de dependências**: o container cria/gerencia instâncias (`@ApplicationScoped`), resolve dependências (`@Inject`) e cuida do *wiring* (menos *boilerplate*).
-* **Inversão de dependência**: a aplicação depende **de interfaces** do domínio (`PacienteRepository`), e a **infraestrutura** oferece implementações (`JdbcPacienteRepository`) que o CDI injeta.
-* **Testabilidade e troca de implementação**: é simples mockar/stubbar repositórios, ou trocar JDBC por JPA no futuro sem tocar o domínio.
-* **Agroal DataSource**: Quarkus expõe o pool; injetamos `DataSource` e abrimos `Connection` em `DatabaseConnectionImpl` — sem gerenciar conexões manualmente.
+1) **Criar Professional**
+```http
+POST /api/professionals
+Content-Type: application/json
+```
+```json
+{
+  "cpf": "11144477735",
+  "nome": "Dr. João",
+  "idade": 35,
+  "email": "joao@clinica.com",
+  "especialidade": "Cardiologia",
+  "crm": "CRM-1234"
+}
+```
+→ **201 Created** com corpo (inclui `id`).
 
-> Usamos CDI/@Inject para manter o domínio desacoplado da infraestrutura, facilitar testes/mocks e delegar o *wiring* ao container do Quarkus.
+2) **Criar Paciente**
+```http
+POST /api/pacientes
+Content-Type: application/json
+```
+```json
+{
+  "cpf": "93541134780",
+  "nome": "Maria da Silva",
+  "idade": 28
+}
+```
+→ **201 Created** com `id` (IDs podem ser altos por causa do identity do Oracle).
+
+3) **Listar Professionals e Pacientes**
+- `GET /api/professionals` → 200 + array  
+- `GET /api/pacientes` → 200 + array
+
+4) **Criar Consulta (Professional)**
+```http
+POST /api/professionals/CRM-1234/consultas
+Content-Type: application/json
+```
+```json
+{
+  "idPaciente": <ID_PACIENTE_DO_PASSO_2>,
+  "dtHoraIso": "2025-12-01T14:00:00",
+  "local": "Sala 3"
+}
+```
+→ **201 Created** + dados da consulta (inclui `id`).
+
+5) **Listar Consultas do Paciente**
+- `GET /api/pacientes/<ID_PACIENTE>/consultas` → deve exibir a consulta criada.
+
+6) **Confirmar Consulta**
+```http
+POST /api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/confirmar
+Content-Type: application/json
+```
+```json
+{ "canal": "WEB" }
+```
+→ **204 No Content**.
+
+7) **Cancelar Consulta**
+```http
+POST /api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/cancelar
+Content-Type: application/json
+```
+```json
+{ "motivo": "Indisponível", "canceladoPor": "PACIENTE" }
+```
+→ **204 No Content**.
+
+> **Dica:** se receber **ORA‑00001** (violação de unique), troque CPF/CRM/EMAIL por valores inéditos.
+
+---
+
+## Por que CDI / @Inject?
+- **Inversão de dependência:** o domínio depende de **interfaces**; a infraestrutura fornece **implementações**.
+- **Wiring pelo container:** Quarkus/Arc cria beans `@ApplicationScoped` e injeta com `@Inject` → menos boilerplate e fronteiras claras.
+- **Testabilidade & troca:** fácil substituir JDBC por JPA ou por mocks sem tocar o domínio.
+
+---
