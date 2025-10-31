@@ -1,5 +1,8 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
-!target/quarkus-app/*
+# keep sources visible to Docker build
+target/
+.quarkus/
+.mvn/wrapper/.cache/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
