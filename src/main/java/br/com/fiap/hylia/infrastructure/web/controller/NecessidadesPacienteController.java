@@ -1,4 +1,4 @@
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.necessidade.CriarNecessidadeEspecial;
 import br.com.fiap.hylia.application.usecase.necessidade.ListarNecessidadesPorUsuario;
@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/pacientes/{idPaciente}/necessidades")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class NecessidadesPacienteResource {
+public class NecessidadesPacienteController {
 
     @Inject CriarNecessidadeEspecial criar;
     @Inject ListarNecessidadesPorUsuario listar;

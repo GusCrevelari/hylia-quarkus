@@ -1,4 +1,4 @@
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.notificacao.ListarNotificacoesDoPaciente;
 import br.com.fiap.hylia.application.usecase.notificacao.MarcarNotificacaoComoLida;
@@ -13,7 +13,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/pacientes/{idPaciente}/notificacoes")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class NotificacoesPacienteResource {
+public class NotificacoesPacienteController {
 
     @Inject ListarNotificacoesDoPaciente listar;
     @Inject MarcarNotificacaoComoLida marcar;

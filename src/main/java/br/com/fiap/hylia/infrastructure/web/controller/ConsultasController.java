@@ -1,5 +1,5 @@
 // infrastructure/web/resource/ConsultasResource.java
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.domain.exceptions.EntidadeNaoLocalizada;
 import br.com.fiap.hylia.domain.repository.ConsultaRepository;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Path("/api/consultas")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class ConsultasResource {
+public class ConsultasController {
 
     @Inject ConsultaRepository consultas;
 

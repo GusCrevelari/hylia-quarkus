@@ -1,5 +1,5 @@
 // infrastructure/web/resource/AuthResource.java
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.auth.RegistrarAcesso;
 import br.com.fiap.hylia.infrastructure.web.dto.auth.LoginDto;
@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/login")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class AuthResource {
+public class AuthController {
     @Inject RegistrarAcesso registrar;
     @Inject PacienteRepository pacientes;
     @Inject ProfessionalRepository professionals;

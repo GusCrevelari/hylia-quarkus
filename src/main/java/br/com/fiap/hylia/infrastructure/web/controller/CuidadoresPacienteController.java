@@ -1,4 +1,4 @@
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.cuidador.DesvincularCuidador;
 import br.com.fiap.hylia.application.usecase.cuidador.ListarCuidadoresDoPaciente;
@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/pacientes/{idPaciente}/cuidadores")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class CuidadoresPacienteResource {
+public class CuidadoresPacienteController {
 
     @Inject VincularCuidador vincular;
     @Inject ListarCuidadoresDoPaciente listar;

@@ -1,10 +1,9 @@
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.consulta.CancelarConsulta;
 import br.com.fiap.hylia.application.usecase.consulta.ConfirmarConsultaPaciente;
 import br.com.fiap.hylia.domain.exceptions.EntidadeNaoLocalizada;
 import br.com.fiap.hylia.domain.repository.ConsultaRepository;
-import br.com.fiap.hylia.infrastructure.web.dto.consulta.*;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -15,7 +14,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/pacientes/{idPaciente}/consultas")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class ConsultasPacienteResource {
+public class ConsultasPacienteController {
 
     @Inject ConsultaRepository consultas;
     @Inject ConfirmarConsultaPaciente confirmar;

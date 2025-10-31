@@ -1,4 +1,4 @@
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.consulta.CriarConsultaProfessional;
 import br.com.fiap.hylia.domain.exceptions.EntidadeNaoLocalizada;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Path("/api/professionals/{crm}/consultas")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class ConsultasProfessionalResource {
+public class ConsultasProfessionalController {
 
     @Inject CriarConsultaProfessional criar;
     @Inject ConsultaRepository consultas;

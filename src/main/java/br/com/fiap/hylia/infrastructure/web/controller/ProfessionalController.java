@@ -1,5 +1,5 @@
 // infrastructure/web/resource/ProfessionalResource.java
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.professional.CadastrarProfessional;
 import br.com.fiap.hylia.domain.exceptions.EntidadeNaoLocalizada;
@@ -17,7 +17,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/professionals")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class ProfessionalResource {
+public class ProfessionalController {
 
     @Inject CadastrarProfessional cadastrar;
     @Inject ProfessionalRepository professionals;

@@ -1,5 +1,5 @@
 // infrastructure/web/resource/HospitalResource.java
-package br.com.fiap.hylia.infrastructure.web.resource;
+package br.com.fiap.hylia.infrastructure.web.controller;
 
 import br.com.fiap.hylia.application.usecase.hospital.CadastrarHospital;
 import br.com.fiap.hylia.domain.exceptions.EntidadeNaoLocalizada;
@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api/hospitais")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class HospitalResource {
+public class HospitalController {
 
     @Inject CadastrarHospital cadastrar;
     @Inject HospitalRepository hospitais;
