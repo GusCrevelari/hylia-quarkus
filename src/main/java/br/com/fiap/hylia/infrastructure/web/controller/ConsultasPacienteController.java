@@ -7,6 +7,7 @@ import br.com.fiap.hylia.domain.repository.ConsultaRepository;
 import br.com.fiap.hylia.infrastructure.web.dto.consulta.ConsultaOutDto;
 import br.com.fiap.hylia.infrastructure.web.dto.consulta.ConfirmarDto;
 import br.com.fiap.hylia.infrastructure.web.dto.consulta.CancelarDto;
+
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
