@@ -6,7 +6,7 @@ public record ProfessionalInDto(
         String cpf,
         Integer idade,
         String email,
-        String especialidade, // domain-only (not in DB yet)
+        String especialidade,
         String crm,
-        Long idUnidade // optional, currently not persisted in our repo impl (null OK)
+        Long idUnidade
 ) {}

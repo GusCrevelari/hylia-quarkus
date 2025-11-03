@@ -32,18 +32,19 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
         return LocalDate.now().minusYears(idade);
     }
 
+    /** Maps a DB row to the domain model (now includes especialidade). */
     private Professional mapToProfessional(
             long idProfissional, String cpf, String nome, String email,
-            String crm, Long idUnidade, LocalDate dtNascimento) {
+            String crm, Long idUnidade, LocalDate dtNascimento, String especialidade) {
 
         int idade = idadeFrom(dtNascimento);
         return new Professional(
-                idProfissional, // ✅ domain id = ID_PROFISSIONAL
+                idProfissional,   // domain id = ID_PROFISSIONAL
                 cpf,
                 nome,
                 idade,
                 email,
-                /* especialidade */ null,
+                especialidade,    // <- pass it through
                 crm
         );
     }
@@ -57,24 +58,26 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
               (?, ?, NULL, ?, 'PROFISSIONAL', ?, SYSTIMESTAMP)
             """;
 
+        // now persists ESPECIALIDADE too
         final String insertProf = """
             INSERT INTO T_HC_PROFISSIONAIS
-              (NOME, CRM, ID_UNIDADE)
+              (NOME, CRM, ID_UNIDADE, ESPECIALIDADE)
             VALUES
-              (?, ?, ?)
+              (?, ?, ?, ?)
             """;
 
         try (Connection conn = databaseConnection.getConnection()) {
             conn.setAutoCommit(false);
 
-            // 1) Insert usuario (for info only)
+            // 1) Insert usuario (for personal info)
             try (PreparedStatement st = conn.prepareStatement(insertUsuario)) {
                 st.setString(1, p.getNome());
                 st.setString(2, p.getCpf());
                 st.setString(3, p.getEmail());
                 st.setDate(4, Date.valueOf(birthFromIdade(p.getIdade())));
-                if (st.executeUpdate() == 0)
+                if (st.executeUpdate() == 0) {
                     throw new RuntimeException("Nenhuma linha inserida em T_HC_USUARIO");
+                }
             }
 
             // 2) Insert profissional and capture ID_PROFISSIONAL
@@ -83,8 +86,10 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
                 st.setString(1, p.getNome());
                 st.setString(2, p.getCrm());
                 st.setNull(3, Types.NUMERIC); // optional ID_UNIDADE
-                if (st.executeUpdate() == 0)
+                st.setString(4, p.getEspecialidade()); // <- NEW
+                if (st.executeUpdate() == 0) {
                     throw new RuntimeException("Nenhuma linha inserida em T_HC_PROFISSIONAIS");
+                }
                 try (ResultSet keys = st.getGeneratedKeys()) {
                     if (!keys.next()) throw new RuntimeException("Sem ID_PROFISSIONAL gerado");
                     idProfissional = keys.getLong(1);
@@ -92,7 +97,7 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
             }
 
             conn.commit();
-            return p.withId(idProfissional); // ✅ correct id
+            return p.withId(idProfissional);
 
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao salvar PROFESSIONAL (USUARIO + PROFISSIONAIS)", e);
@@ -107,6 +112,7 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
             p.NOME             AS P_NOME,
             p.CRM,
             p.ID_UNIDADE,
+            p.ESPECIALIDADE,          -- NEW
             u.CPF,
             u.EMAIL,
             u.DT_NASCIMENTO
@@ -130,8 +136,9 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
                     Date dt = rs.getDate("DT_NASCIMENTO");
                     LocalDate birth = (dt == null) ? null : dt.toLocalDate();
                     Long idUnidade = rs.getObject("ID_UNIDADE") == null ? null : rs.getLong("ID_UNIDADE");
+                    String especialidade = rs.getString("ESPECIALIDADE"); // NEW
 
-                    return mapToProfessional(idProf, cpf, nome, email, crm, idUnidade, birth);
+                    return mapToProfessional(idProf, cpf, nome, email, crm, idUnidade, birth, especialidade);
                 }
             }
         } catch (SQLException e) {
@@ -148,6 +155,7 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
             p.NOME             AS P_NOME,
             p.CRM,
             p.ID_UNIDADE,
+            p.ESPECIALIDADE,         -- NEW
             u.CPF,
             u.EMAIL,
             u.DT_NASCIMENTO
@@ -172,8 +180,9 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
                 LocalDate birth = (dt == null) ? null : dt.toLocalDate();
                 String crmDb = rs.getString("CRM");
                 Long idUnidade = rs.getObject("ID_UNIDADE") == null ? null : rs.getLong("ID_UNIDADE");
+                String especialidade = rs.getString("ESPECIALIDADE"); // NEW
 
-                out.add(mapToProfessional(idProf, cpf, nome, email, crmDb, idUnidade, birth));
+                out.add(mapToProfessional(idProf, cpf, nome, email, crmDb, idUnidade, birth, especialidade));
             }
             return out;
 
@@ -188,7 +197,7 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
                                 int novaIdade,
                                 String novoEmail,
                                 String novaEspecialidade) throws EntidadeNaoLocalizada {
-        // NOTE: 'novaEspecialidade' has no column in the current schema -> ignored persistently.
+
         final String findUserSql = """
             SELECT u.ID_USUARIO
               FROM T_HC_PROFISSIONAIS p
@@ -204,9 +213,10 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
              WHERE ID_USUARIO = ?
             """;
 
+        // now updates ESPECIALIDADE as well
         final String updProf = """
             UPDATE T_HC_PROFISSIONAIS
-               SET NOME = ?
+               SET NOME = ?, ESPECIALIDADE = ?
              WHERE CRM = ?
             """;
 
@@ -237,7 +247,8 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
 
             try (PreparedStatement st = conn.prepareStatement(updProf)) {
                 st.setString(1, novoNome);
-                st.setString(2, crmChave);
+                st.setString(2, novaEspecialidade); // NEW
+                st.setString(3, crmChave);
                 st.executeUpdate();
             }
 
