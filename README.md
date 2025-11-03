@@ -1,4 +1,4 @@
-# Hylia API — Quarkus (Arquitetura Limpa)
+# Hylia API
 
 **Curso:** FIAP — 1TDSPO  
 **Solução:** Hylia (Pacientes, Profissionais, Hospitais, Consultas etc.)  
