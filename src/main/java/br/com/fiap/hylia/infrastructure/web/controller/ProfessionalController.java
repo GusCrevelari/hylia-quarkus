@@ -45,41 +45,35 @@ public class ProfessionalController {
         return Response.ok(ProfessionalMapper.toOut(p)).build();
     }
 
-    @PATCH
-    @Path("{crm}")
-    public Response update(@PathParam("crm") String crm, ProfessionalUpdateDto in)
+    // ---- Single, portable update endpoint (use this from the frontend) ----
+    @POST
+    @Path("{crm}/update")
+    public Response updateViaPost(@PathParam("crm") String crm, ProfessionalUpdateDto in)
             throws EntidadeNaoLocalizada {
         if (in == null || (in.nome() == null && in.idade() == null && in.email() == null && in.especialidade() == null)) {
             throw new BadRequestException("Nothing to update");
         }
         var current = professionals.buscarPorCrm(crm);
-        var nome  = in.nome()         == null ? current.getNome()         : in.nome();
-        var idade = in.idade()        == null ? current.getIdade()        : in.idade();
-        var email = in.email()        == null ? current.getEmail()        : in.email();
-        var esp   = in.especialidade() == null ? current.getEspecialidade() : in.especialidade();
+
+        // allow partial / blanks -> keep current if null or blank
+        String nome  = blankToNull(in.nome()) == null ? current.getNome() : in.nome().trim();
+        Integer idade = in.idade() == null ? current.getIdade() : in.idade();
+        String email = blankToNull(in.email());
+        if (email == null) email = current.getEmail();
+        String esp = blankToNull(in.especialidade());
+        if (esp == null) esp = current.getEspecialidade();
 
         professionals.atualizarPorCrm(crm, nome, idade, email, esp);
         var updated = professionals.buscarPorCrm(crm);
         return Response.ok(ProfessionalMapper.toOut(updated)).build();
     }
 
-    @POST
-    @Path("{crm}/update")
-    public Response updateViaPost(@PathParam("crm") String crm, ProfessionalUpdateDto in)
+    // Optional: keep PUT if you want a RESTful alternative
+    @PUT
+    @Path("{crm}")
+    public Response updatePut(@PathParam("crm") String crm, ProfessionalUpdateDto in)
             throws EntidadeNaoLocalizada {
-        // Reuse the same behavior as PATCH
-        if (in == null || (in.nome() == null && in.idade() == null && in.email() == null && in.especialidade() == null)) {
-            throw new BadRequestException("Nothing to update");
-        }
-        var current = professionals.buscarPorCrm(crm);
-        var nome  = in.nome()          == null ? current.getNome()          : in.nome();
-        var idade = in.idade()         == null ? current.getIdade()         : in.idade();
-        var email = in.email()         == null ? current.getEmail()         : in.email();
-        var esp   = in.especialidade() == null ? current.getEspecialidade() : in.especialidade();
-
-        professionals.atualizarPorCrm(crm, nome, idade, email, esp);
-        var updated = professionals.buscarPorCrm(crm);
-        return Response.ok(ProfessionalMapper.toOut(updated)).build();
+        return updateViaPost(crm, in);
     }
 
     @DELETE
@@ -89,11 +83,7 @@ public class ProfessionalController {
         return Response.noContent().build();
     }
 
-    @PUT
-    @Path("{crm}")
-    public Response updatePut(@PathParam("crm") String crm, ProfessionalUpdateDto in)
-            throws EntidadeNaoLocalizada {
-        // Reuse the same logic
-        return update(crm, in);
+    private static String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s;
     }
 }
