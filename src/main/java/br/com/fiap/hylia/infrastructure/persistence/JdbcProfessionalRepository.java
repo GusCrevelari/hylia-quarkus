@@ -38,9 +38,11 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
             String crm, Long idUnidade, LocalDate dtNascimento, String especialidade) {
 
         int idade = idadeFrom(dtNascimento);
-        return new Professional(
+        String safeCpf = cpfOrNull(cpf);
+
+        return Professional.fromDb(
                 idProfissional,
-                cpfOrNull(cpf),      // <<< sanitize here (null for bad/missing)
+                safeCpf,
                 nome,
                 idade,
                 email,
