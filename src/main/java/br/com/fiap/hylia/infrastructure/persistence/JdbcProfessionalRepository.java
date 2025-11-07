@@ -32,23 +32,22 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
         return LocalDate.now().minusYears(idade);
     }
 
-    /** Maps a DB row to the domain model (now includes especialidade). */
+
     private Professional mapToProfessional(
             long idProfissional, String cpf, String nome, String email,
             String crm, Long idUnidade, LocalDate dtNascimento, String especialidade) {
 
         int idade = idadeFrom(dtNascimento);
         return new Professional(
-                idProfissional,   // domain id = ID_PROFISSIONAL
-                cpf,
+                idProfissional,
+                cpfOrNull(cpf),      // <<< sanitize here (null for bad/missing)
                 nome,
                 idade,
                 email,
-                especialidade,    // <- pass it through
+                especialidade,
                 crm
         );
     }
-
     @Override
     public Professional salvar(Professional p) {
         final String insertUsuario = """
@@ -272,4 +271,14 @@ public class JdbcProfessionalRepository implements ProfessionalRepository {
             throw new EntidadeNaoLocalizada("Erro ao deletar PROFESSIONAL por CRM", e);
         }
     }
+
+    private static String cpfOrNull(String cpf) {
+        if (cpf == null) return null;
+        String digits = cpf.replaceAll("\\D", "");
+        // treat empty / wrong length / all-equal as "no cpf" instead of throwing
+        if (digits.length() != 11 || digits.matches("(\\d)\\1{10}")) return null;
+        return digits;
+    }
+
+
 }
