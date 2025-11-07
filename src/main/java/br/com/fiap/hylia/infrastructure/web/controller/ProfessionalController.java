@@ -63,6 +63,25 @@ public class ProfessionalController {
         return Response.ok(ProfessionalMapper.toOut(updated)).build();
     }
 
+    @POST
+    @Path("{crm}/update")
+    public Response updateViaPost(@PathParam("crm") String crm, ProfessionalUpdateDto in)
+            throws EntidadeNaoLocalizada {
+        // Reuse the same behavior as PATCH
+        if (in == null || (in.nome() == null && in.idade() == null && in.email() == null && in.especialidade() == null)) {
+            throw new BadRequestException("Nothing to update");
+        }
+        var current = professionals.buscarPorCrm(crm);
+        var nome  = in.nome()          == null ? current.getNome()          : in.nome();
+        var idade = in.idade()         == null ? current.getIdade()         : in.idade();
+        var email = in.email()         == null ? current.getEmail()         : in.email();
+        var esp   = in.especialidade() == null ? current.getEspecialidade() : in.especialidade();
+
+        professionals.atualizarPorCrm(crm, nome, idade, email, esp);
+        var updated = professionals.buscarPorCrm(crm);
+        return Response.ok(ProfessionalMapper.toOut(updated)).build();
+    }
+
     @DELETE
     @Path("{crm}")
     public Response delete(@PathParam("crm") String crm) throws EntidadeNaoLocalizada {
