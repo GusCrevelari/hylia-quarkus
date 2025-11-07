@@ -1,4 +1,4 @@
-# Hylia API — Quarkus (Arquitetura Limpa)
+# Hylia API
 
 **Curso:** FIAP — 1TDSPO  
 **Solução:** Hylia (Pacientes, Profissionais, Hospitais, Consultas etc.)  
@@ -141,31 +141,31 @@ java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar
 ## Endpoints (Guia rápido)
 
 ### Pacientes
-- `POST /api/pacientes` — criar
-- `GET  /api/pacientes` — listar
-- `GET  /api/pacientes/{cpf}` — buscar por CPF
+- `POST https://hylia-api-service.onrender.com/api/pacientes` — criar
+- `GET  https://hylia-api-service.onrender.com/api/pacientes` — listar
+- `GET  https://hylia-api-service.onrender.com/api/pacientes/{cpf}` — buscar por CPF
 - *(opcionais)* `PATCH /api/pacientes/{cpf}`, `DELETE /api/pacientes/{cpf}`
 
 ### Professionals
-- `POST /api/professionals` — criar
-- `GET  /api/professionals` — listar
-- `GET  /api/professionals/{crm}` — buscar por CRM
+- `POST https://hylia-api-service.onrender.com/api/professionals` — criar
+- `GET  https://hylia-api-service.onrender.com/api/professionals` — listar
+- `GET  https://hylia-api-service.onrender.com/api/professionals/{crm}` — buscar por CRM
 - *(opcionais)* `PATCH /api/professionals/{crm}`, `DELETE /api/professionals/{crm}`
 
 ### Hospitais
-- `POST /api/hospitais` — criar
-- `GET  /api/hospitais` — listar
-- `GET  /api/hospitais/{email}` — buscar por email
+- `POST https://hylia-api-service.onrender.com/api/hospitais` — criar
+- `GET  https://hylia-api-service.onrender.com/api/hospitais` — listar
+- `GET  https://hylia-api-service.onrender.com/api/hospitais/{email}` — buscar por email
 - *(opcionais)* `PATCH /api/hospitais/{email}`, `DELETE /api/hospitais/{email}`
 
 ### Consultas (fluxos de Profissional e Paciente)
 - **Agenda do Profissional**
-  - `POST /api/professionals/{crm}/consultas` — cria consulta (`idPaciente`, `dtHoraIso`, `local`)
-  - `GET  /api/professionals/{crm}/consultas` — lista consultas do profissional
+  - `POST https://hylia-api-service.onrender.com/api/professionals/{crm}/consultas` — cria consulta (`idPaciente`, `dtHoraIso`, `local`)
+  - `GET  https://hylia-api-service.onrender.com/api/professionals/{crm}/consultas` — lista consultas do profissional
 - **Ações do Paciente**
-  - `GET  /api/pacientes/{idPaciente}/consultas` — lista consultas do paciente
-  - `POST /api/pacientes/{idPaciente}/consultas/{idConsulta}/confirmar` — confirma (`{ "canal": "WEB" }` opcional)
-  - `POST /api/pacientes/{idPaciente}/consultas/{idConsulta}/cancelar` — cancela (`{ "motivo": "...", "canceladoPor": "PACIENTE" }` opcional)
+  - `GET  https://hylia-api-service.onrender.com/api/pacientes/{idPaciente}/consultas` — lista consultas do paciente
+  - `POST https://hylia-api-service.onrender.com/api/pacientes/{idPaciente}/consultas/{idConsulta}/confirmar` — confirma (`{ "canal": "WEB" }` opcional)
+  - `POST https://hylia-api-service.onrender.com/api/pacientes/{idPaciente}/consultas/{idConsulta}/cancelar` — cancela (`{ "motivo": "...", "canceladoPor": "PACIENTE" }` opcional)
 
 ---
 
@@ -175,7 +175,7 @@ java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar
 
 1) **Criar Professional**
 ```http
-POST /api/professionals
+POST https://hylia-api-service.onrender.com/api/professionals
 Content-Type: application/json
 ```
 ```json
@@ -192,7 +192,7 @@ Content-Type: application/json
 
 2) **Criar Paciente**
 ```http
-POST /api/pacientes
+POST https://hylia-api-service.onrender.com/api/pacientes
 Content-Type: application/json
 ```
 ```json
@@ -205,12 +205,12 @@ Content-Type: application/json
 → **201 Created** com `id` (IDs podem ser altos por causa do identity do Oracle).
 
 3) **Listar Professionals e Pacientes**
-- `GET /api/professionals` → 200 + array  
-- `GET /api/pacientes` → 200 + array
+- `GET https://hylia-api-service.onrender.com/api/professionals` → 200 + array  
+- `GET https://hylia-api-service.onrender.com/api/pacientes` → 200 + array
 
 4) **Criar Consulta (Professional)**
 ```http
-POST /api/professionals/CRM-1234/consultas
+POST https://hylia-api-service.onrender.com/api/professionals/CRM-1234/consultas
 Content-Type: application/json
 ```
 ```json
@@ -223,11 +223,11 @@ Content-Type: application/json
 → **201 Created** + dados da consulta (inclui `id`).
 
 5) **Listar Consultas do Paciente**
-- `GET /api/pacientes/<ID_PACIENTE>/consultas` → deve exibir a consulta criada.
+- `GET https://hylia-api-service.onrender.com/api/pacientes/<ID_PACIENTE>/consultas` → deve exibir a consulta criada.
 
 6) **Confirmar Consulta**
 ```http
-POST /api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/confirmar
+POST https://hylia-api-service.onrender.com/api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/confirmar
 Content-Type: application/json
 ```
 ```json
@@ -237,7 +237,7 @@ Content-Type: application/json
 
 7) **Cancelar Consulta**
 ```http
-POST /api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/cancelar
+POST https://hylia-api-service.onrender.com/api/pacientes/<ID_PACIENTE>/consultas/<ID_CONSULTA>/cancelar
 Content-Type: application/json
 ```
 ```json
