@@ -169,7 +169,7 @@ java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar
 
 ---
 
-## Plano de Testes (Postman)
+## Plano de Testes (Colletion do Postman incluído na pasta do projeto)
 > Use CPFs **válidos** (algoritmo), por exemplo: `11144477735`, `93541134780`.  
 > Ajuste CRM/EMAIL para valores únicos quando necessário.
 
