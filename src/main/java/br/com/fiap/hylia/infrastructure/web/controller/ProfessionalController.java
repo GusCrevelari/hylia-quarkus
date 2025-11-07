@@ -88,4 +88,12 @@ public class ProfessionalController {
         professionals.deletarPorCrm(crm);
         return Response.noContent().build();
     }
+
+    @PUT
+    @Path("{crm}")
+    public Response updatePut(@PathParam("crm") String crm, ProfessionalUpdateDto in)
+            throws EntidadeNaoLocalizada {
+        // Reuse the same logic
+        return update(crm, in);
+    }
 }
