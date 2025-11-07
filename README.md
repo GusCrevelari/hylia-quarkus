@@ -35,25 +35,116 @@ Fora do escopo (nesta entrega): autenticação real (JWT/OIDC), segurança robus
 **Clean Architecture**: regras de negócio em `domain`, orquestração em `application/usecase`, entrada/saída em `infrastructure` (web + persistence). Acoplamento via **interfaces** e CDI.
 
 ```
-src/main/java/br/com/fiap/hylia
-├─ application
-│  └─ usecase
-│     ├─ paciente/…                 # ex.: CadastrarPaciente
-│     ├─ professional/…             # ex.: CadastrarProfessional, CriarConsultaProfessional
-│     └─ consulta/…                 # ConfirmarConsultaPaciente, CancelarConsulta
-├─ domain
-│  ├─ model/                        # Paciente, Professional, Hospital, Consulta, …
-│  ├─ repository/                   # interfaces (ports)
-│  ├─ util/                         # Validators
-│  └─ exceptions/                   # ValidacaoDominioException, EntidadeNaoLocalizada
-├─ infrastructure
-│  ├─ persistence/                  # JDBC repositories, DatabaseConnection
-│  └─ web/
-│     ├─ dto/…                      # DTOs (records) de entrada/saída
-│     ├─ mapper/…                   # mapeia DTO <-> domínio
-│     └─ resource/…                 # JAX‑RS resources (controllers)
-└─ resources/
-   └─ application.properties
+src/
+└─ main/
+   ├─ java/
+   │  └─ br/com/fiap/hylia/
+   │     ├─ application/
+   │     │  └─ usecase/
+   │     │     ├─ paciente/
+   │     │     │  └─ CadastrarPaciente.java
+   │     │     ├─ professional/
+   │     │     │  ├─ CadastrarProfessional.java
+   │     │     │  └─ CriarConsultaProfessional.java
+   │     │     ├─ hospital/
+   │     │     │  └─ CadastrarHospital.java
+   │     │     ├─ consulta/
+   │     │     │  ├─ ConfirmarConsultaPaciente.java
+   │     │     │  └─ CancelarConsulta.java
+   │     │     ├─ acesso/                       # (mock login/session, optional)
+   │     │     │  └─ RegistrarAcesso.java
+   │     │     └─ cuidador/
+   │     │        └─ VincularCuidador.java
+   │     │
+   │     ├─ domain/
+   │     │  ├─ model/
+   │     │  │  ├─ Pessoa.java
+   │     │  │  ├─ Paciente.java
+   │     │  │  ├─ Professional.java
+   │     │  │  ├─ Hospital.java
+   │     │  │  ├─ Consulta.java
+   │     │  │  ├─ Cancelamento.java
+   │     │  │  ├─ Confirmacao.java
+   │     │  │  ├─ Notificacao.java
+   │     │  │  ├─ Acesso.java
+   │     │  │  ├─ NecessidadeEspecial.java
+   │     │  │  └─ CuidadorVinculo.java
+   │     │  ├─ repository/
+   │     │  │  ├─ PacienteRepository.java
+   │     │  │  ├─ ProfessionalRepository.java
+   │     │  │  ├─ HospitalRepository.java
+   │     │  │  ├─ ConsultaRepository.java
+   │     │  │  ├─ CancelamentoRepository.java
+   │     │  │  ├─ ConfirmacaoRepository.java
+   │     │  │  ├─ NotificacaoRepository.java
+   │     │  │  ├─ AcessoRepository.java
+   │     │  │  └─ CuidadorRepository.java
+   │     │  ├─ util/
+   │     │  │  └─ Validators.java
+   │     │  └─ exceptions/
+   │     │     ├─ ValidacaoDominioException.java
+   │     │     └─ EntidadeNaoLocalizada.java
+   │     │
+   │     └─ infrastructure/
+   │        ├─ persistence/
+   │        │  ├─ DatabaseConnection.java
+   │        │  ├─ DatabaseConnectionImpl.java   # injeta DataSource (Agroal)
+   │        │  ├─ JdbcPacienteRepository.java
+   │        │  ├─ JdbcProfessionalRepository.java
+   │        │  ├─ JdbcHospitalRepository.java
+   │        │  ├─ JdbcConsultaRepository.java
+   │        │  ├─ JdbcCancelamentoRepository.java
+   │        │  ├─ JdbcConfirmacaoRepository.java
+   │        │  ├─ JdbcNotificacaoRepository.java
+   │        │  ├─ JdbcAcessoRepository.java
+   │        │  └─ JdbcCuidadorRepository.java
+   │        │
+   │        └─ web/
+   │           ├─ dto/
+   │           │  ├─ paciente/
+   │           │  │  ├─ PacienteInDto.java
+   │           │  │  ├─ PacienteOutDto.java
+   │           │  │  └─ PacientePatchDto.java           # opcional
+   │           │  ├─ professional/
+   │           │  │  ├─ ProfessionalInDto.java
+   │           │  │  ├─ ProfessionalOutDto.java
+   │           │  │  └─ ProfessionalPatchDto.java       # opcional
+   │           │  ├─ hospital/
+   │           │  │  ├─ HospitalInDto.java
+   │           │  │  ├─ HospitalOutDto.java
+   │           │  │  └─ HospitalPatchDto.java           # opcional
+   │           │  ├─ consulta/
+   │           │  │  ├─ ConsultaInDto.java
+   │           │  │  ├─ ConsultaOutDto.java
+   │           │  │  ├─ ConfirmarDto.java
+   │           │  │  └─ CancelarDto.java
+   │           │  ├─ acesso/
+   │           │  │  ├─ LoginDto.java                   # mock (email/senha)
+   │           │  │  └─ SessionDto.java                 # mock (token fake)
+   │           │  └─ cuidador/
+   │           │     ├─ CuidadorInDto.java              # {idPaciente, idUsuario}
+   │           │     └─ CuidadorOutDto.java
+   │           │
+   │           ├─ mapper/
+   │           │  ├─ PacienteMapper.java
+   │           │  ├─ ProfessionalMapper.java
+   │           │  ├─ HospitalMapper.java
+   │           │  └─ ConsultaMapper.java                # se necessário
+   │           │
+   │           └─ controller/                           # (antes “resource”)
+   │              ├─ PacienteController.java            # /api/pacientes
+   │              ├─ ProfessionalController.java        # /api/professionals
+   │              ├─ HospitalController.java            # /api/hospitais
+   │              ├─ ConsultasProfessionalController.java# /api/professionals/{crm}/consultas
+   │              ├─ ConsultasPacienteController.java   # /api/pacientes/{idPaciente}/consultas
+   │              ├─ CuidadoresController.java          # /api/cuidadores (vincular/listar/remover)
+   │              └─ AuthController.java                # /api/auth (mock login), opcional
+   │
+   └─ resources/
+      ├─ application.properties          # CORS + Oracle (prod) + H2 (profile dev/test)
+      ├─ import-h2.sql                   # opcional: seed p/ H2
+      └─ META-INF/
+         └─ resources/
 ```
 
 **Fluxo (ex.: criar Paciente):**  
@@ -137,6 +228,10 @@ java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar
 ```
 
 ---
+
+## Repositório GitHub
+
+https://github.com/GusCrevelari/hylia-quarkus
 
 ## Endpoints (Guia rápido)
 
